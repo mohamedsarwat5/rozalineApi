@@ -34,7 +34,10 @@ router.post("/", async (req, res) => {
   try {
     const product = await Product.create(req.body);
 
-    res.status(201).json(product);
+    res.status(201).json({
+      message: "Product added successfully",
+      product: product,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -43,13 +46,14 @@ router.post("/", async (req, res) => {
 // UPDATE PRODUCT
 router.put("/:id", async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
 
-    res.status(200).json(product);
+    res.status(200).json({
+      message: "Product updated successfully",
+      product: product,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
