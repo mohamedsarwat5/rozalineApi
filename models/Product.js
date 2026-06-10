@@ -53,10 +53,11 @@ const productSchema = new mongoose.Schema(
       {
         type: String,
         enum: [
-          "55-80",
-          "80-120",
-          "120-140",
-          "140+",
+          "one size",
+          "55-85",
+          "85-120",
+          "55-80 (Bust: 105)",
+          "80-120 (Bust: 112)",
         ],
       },
     ],
@@ -68,6 +69,7 @@ const productSchema = new mongoose.Schema(
           "100",
           "105",
           "110",
+          "150"
         ],
       },
     ],
