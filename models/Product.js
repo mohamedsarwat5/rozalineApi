@@ -49,20 +49,25 @@ const productSchema = new mongoose.Schema(
       },
     ],
 
-    options: [
+    availableWeights: [
       {
-        name: {
-          type: String,
-          required: true,
-          trim: true,
-        },
+        type: String,
+        enum: [
+          "55-80",
+          "80-120",
+          "120-140",
+          "140+",
+        ],
+      },
+    ],
 
-        values: [
-          {
-            type: String,
-            required: true,
-            trim: true,
-          },
+    availableLengths: [
+      {
+        type: String,
+        enum: [
+          "100",
+          "105",
+          "110",
         ],
       },
     ],
