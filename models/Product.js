@@ -24,9 +24,12 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+
     inStock: {
       type: Boolean,
+      default: true,
     },
+
     colors: [
       {
         color: {
@@ -41,13 +44,32 @@ const productSchema = new mongoose.Schema(
 
         inStock: {
           type: Boolean,
+          default: true,
         },
+      },
+    ],
+
+    options: [
+      {
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+
+        values: [
+          {
+            type: String,
+            required: true,
+            trim: true,
+          },
+        ],
       },
     ],
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 module.exports = mongoose.model("Product", productSchema);
