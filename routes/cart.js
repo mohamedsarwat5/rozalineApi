@@ -7,9 +7,8 @@ const Cart = require("../models/Cart");
 // get cart
 router.get("/:cartId", async (req, res) => {
   try {
-    const cart = await Cart.findOne({
-      cartId: req.params.cartId,
-    });
+    const cart = await Cart.findOne({ user: req.params.cartId })
+      .populate("items.product"); // 👈 جلب تفاصيل المنتج (الاسم، الصورة، إلخ) تلقائياً من الموديل الخاص به
 
     res.status(200).json(cart);
   } catch (error) {
@@ -18,7 +17,6 @@ router.get("/:cartId", async (req, res) => {
 });
 
 
-// add to cart
 // add to cart
 router.post("/", async (req, res) => {
   try {
