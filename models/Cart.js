@@ -70,11 +70,10 @@ const cartSchema = new mongoose.Schema(
 );
 
 // حساب السعر الكلي تلقائياً قبل الحفظ
-cartSchema.pre("save", function (next) {
+cartSchema.pre("save", function () {
   this.totalPrice = this.items.reduce((total, item) => {
-    return total + item.priceAtAddition * item.quantity;
+    return total + (item.priceAtAddition * item.quantity);
   }, 0);
-  next();
 });
 
 module.exports = mongoose.model("Cart", cartSchema);
