@@ -52,10 +52,9 @@ const cartItemSchema = new mongoose.Schema({
 const cartSchema = new mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String, //  تم التغيير إلى String ليقبل أي نص عشوائي (مثل cart_xxxxxx)
       required: true,
-      unique: true,
+      unique: true, // يضمن أن كل زائر لديه عربة تسوق واحدة فقط برقمها الفريد
     },
 
     items: [cartItemSchema],
