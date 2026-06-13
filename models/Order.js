@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
+    // ربطه بـ cartId (الذي يمثل الـ user الفريد للزائر)
     cartId: {
       type: String,
       required: true,
@@ -25,35 +26,37 @@ const orderSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // تم تحديث الهيكل هنا ليتطابق تماماً مع الـ cartItemSchema
     items: [
       {
-        productId: {
+        product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
           required: true,
         },
 
-        name: {
-          type: String,
-          required: true,
-        },
-
-        image: {
-          type: String,
-          required: true,
-        },
-
-        color: {
-          type: String,
-          required: true,
-        },
-
-        price: {
+        quantity: {
           type: Number,
           required: true,
+          min: 1,
         },
 
-        quantity: {
+        selectedColor: {
+          color: { type: String, required: true },
+          image: { type: String, required: true },
+        },
+
+        selectedWeight: {
+          type: String,
+          default: null,
+        },
+
+        selectedLength: {
+          type: String,
+          default: null,
+        },
+
+        priceAtAddition: {
           type: Number,
           required: true,
         },
@@ -64,9 +67,16 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+
+    // حقل إضافي هام جداً لإدارة المتجر ومتابعة الشحن
+    status: {
+      type: String,
+      enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
+      default: "Pending",
+    },
   },
   {
-    timestamps: true,
+    timestamps: true, // يسجل وقت عمل الطلب تلقائياً (createdAt)
   }
 );
 
