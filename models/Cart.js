@@ -1,66 +1,81 @@
 const mongoose = require("mongoose");
 
+const cartItemSchema = new mongoose.Schema({
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
+
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 1,
+  },
+
+  selectedColor: {
+    color: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+  },
+
+  selectedWeight: {
+    type: String,
+    enum: [
+      "one size",
+      "55-85",
+      "85-120",
+      "55-80 (Bust: 105)",
+      "80-120 (Bust: 112)",
+    ],
+    default: null,
+  },
+
+  selectedLength: {
+    type: String,
+    enum: ["100", "105", "110", "150"],
+    default: null,
+  },
+
+  priceAtAddition: {
+    type: Number,
+    required: true,
+  },
+});
+
 const cartSchema = new mongoose.Schema(
   {
-    cartId: {
-      type: String,
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
       unique: true,
     },
 
-    items: [
-      {
-        productId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
+    items: [cartItemSchema],
 
-        name: {
-          type: String,
-          required: true,
-        },
-
-        image: {
-          type: String,
-          required: true,
-        },
-
-        color: {
-          type: String,
-          required: true,
-        },
-
-        price: {
-          type: Number,
-          required: true,
-        },
-
-        quantity: {
-          type: Number,
-          default: 1,
-          min: 1,
-        },
-
-        selectedOptions: [
-          {
-            name: {
-              type: String,
-              required: true,
-            },
-
-            value: {
-              type: String,
-              required: true,
-            },
-          },
-        ],
-      },
-    ],
+    totalPrice: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// حساب السعر الكلي تلقائياً قبل الحفظ
+cartSchema.pre("save", function (next) {
+  this.totalPrice = this.items.reduce((total, item) => {
+    return total + item.priceAtAddition * item.quantity;
+  }, 0);
+  next();
+});
 
 module.exports = mongoose.model("Cart", cartSchema);
