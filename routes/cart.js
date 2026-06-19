@@ -71,7 +71,7 @@ router.post("/", async (req, res) => {
 router.put("/:cartId/:itemId", async (req, res) => {
   try {
     const cart = await Cart.findOne({
-      cartId: req.params.cartId,
+      user: req.params.cartId,
     });
 
     const item = cart.items.id(req.params.itemId);
