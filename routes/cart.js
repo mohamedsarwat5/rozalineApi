@@ -90,7 +90,7 @@ router.put("/:cartId/:itemId", async (req, res) => {
 router.delete("/:cartId/:itemId", async (req, res) => {
   try {
     const cart = await Cart.findOne({
-      cartId: req.params.cartId,
+      user: req.params.cartId,
     });
 
     cart.items.pull(req.params.itemId);
