@@ -27,20 +27,20 @@ const cartItemSchema = new mongoose.Schema({
 
   selectedWeight: {
     type: String,
-    enum: [
-      "one size",
-      "50-80",
-      "80-120",
-      "Up to 80 (Bust: 105)",
-      "Up to 110 (Bust: 120)",
-      "Up to 110",
-    ],
+    // enum: [
+    //   "one size",
+    //   "50-80",
+    //   "80-120",
+    //   "Up to 80 (Bust: 105)",
+    //   "Up to 110 (Bust: 120)",
+    //   "Up to 110",
+    // ],
     default: null,
   },
 
   selectedLength: {
     type: String,
-    enum: ["100", "105", "110", "150"],
+    // enum: ["100", "105", "110", "150"],
     default: null,
   },
 
