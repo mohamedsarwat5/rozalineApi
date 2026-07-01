@@ -54,11 +54,11 @@ const productSchema = new mongoose.Schema(
         type: String,
         enum: [
           "one size",
-          "50-80",
-          "80-120",
-          "Up to 80 (Bust: 105)",
-          "Up to 110 (Bust: 120)",
-          "Up to 110"
+          "50-80 kg",
+          "80-120 kg",
+          "Up to 80 kg (Bust: 105)",
+          "Up to 110 kg (Bust: 120)",
+          "Up to 110 kg",
         ],
       },
     ],
@@ -66,18 +66,13 @@ const productSchema = new mongoose.Schema(
     availableLengths: [
       {
         type: String,
-        enum: [
-          "100",
-          "105",
-          "110",
-          "150"
-        ],
+        enum: ["100", "105", "110", "150"],
       },
     ],
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Product", productSchema);
