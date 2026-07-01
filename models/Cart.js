@@ -29,10 +29,11 @@ const cartItemSchema = new mongoose.Schema({
     type: String,
     enum: [
       "one size",
-      "55-85",
-      "85-120",
-      "55-80 (Bust: 105)",
-      "80-120 (Bust: 112)",
+      "50-80",
+      "80-120",
+      "Up to 80 (Bust: 105)",
+      "Up to 110 (Bust: 120)",
+      "Up to 110",
     ],
     default: null,
   },
@@ -66,13 +67,13 @@ const cartSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // حساب السعر الكلي تلقائياً قبل الحفظ
 cartSchema.pre("save", function () {
   this.totalPrice = this.items.reduce((total, item) => {
-    return total + (item.priceAtAddition * item.quantity);
+    return total + item.priceAtAddition * item.quantity;
   }, 0);
 });
 
