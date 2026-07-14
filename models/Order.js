@@ -25,6 +25,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    governorate: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     // تم تحديث الهيكل هنا ليتطابق تماماً مع الـ cartItemSchema
     items: [

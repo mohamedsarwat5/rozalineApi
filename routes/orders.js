@@ -4,7 +4,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 
-// 1. جلب جميع الطلبات (مع عمل populate لجلب تفاصيل المنتجات داخل الطلب)
+// 1. جلب جميع الطلبات
 router.get("/", async (req, res) => {
   try {
     const orders = await Order.find().populate("items.product");
@@ -27,12 +27,19 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 3. إنشاء طلب جديد (Checkout) ✨
+// 3. إنشاء طلب جديد (Checkout) ✨ (تم التحديث)
 router.post("/", async (req, res) => {
   try {
-    const { cartId, customerName, phone, address } = req.body;
+    const { cartId, customerName, phone, address, governorate, shippingPrice } = req.body;
 
-    // 👈 إصلاح 1: البحث بحقل user لأن هذا هو مكان تخزين الـ ID في العربة
+    // 👈 التحقق من وجود بيانات المحافظة والشحن
+    if (!governorate || shippingPrice === undefined) {
+      return res.status(400).json({
+        message: "Governorate and shipping price are required",
+      });
+    }
+
+    // البحث بحقل user لأن هذا هو مكان تخزين الـ ID في العربة
     const cart = await Cart.findOne({ user: cartId });
 
     if (!cart || cart.items.length === 0) {
@@ -41,17 +48,21 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // 👈 إصلاح 2: تمرير الـ totalPrice المحسوب وجاهز من العربة مباشرة دون حسابات معقدة
+    // 👈 الحساب الآمن للإجمالي: جمع سعر السلة الأصلي + تكلفة شحن المحافظة المحددة
+    const calculatedTotalPrice = cart.totalPrice + Number(shippingPrice);
+
     const order = await Order.create({
       cartId,
       customerName,
       phone,
       address,
-      items: cart.items, // سينتقل بالهيكل الجديد المحدث (الألوان والمقاسات) تلقائياً
-      totalPrice: cart.totalPrice,
+      governorate, // 👈 حفظ المحافظة
+      shippingPrice, // 👈 حفظ سعر الشحن
+      items: cart.items,
+      totalPrice: calculatedTotalPrice, // 👈 الإجمالي الجديد شاملاً الشحن
     });
 
-    // 👈 إصلاح 3: تصفير العربة بالكامل (المنتجات والسعر الإجمالي) بعد نجاح الطلب
+    // تصفير العربة بالكامل بعد نجاح الطلب
     cart.items = [];
     cart.totalPrice = 0;
     await cart.save();
