@@ -34,6 +34,11 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    
+    newArrival: {
+      type: Boolean,
+      default: false,
+    },
 
     colors: [
       {
