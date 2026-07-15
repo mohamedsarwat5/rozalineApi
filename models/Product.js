@@ -30,6 +30,11 @@ const productSchema = new mongoose.Schema(
       default: true,
     },
 
+    bestSeller: {
+      type: Boolean,
+      default: false,
+    },
+
     colors: [
       {
         color: {
