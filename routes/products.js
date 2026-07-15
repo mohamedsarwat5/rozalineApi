@@ -70,4 +70,57 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// GET SITEMAP.XML
+router.get("/sitemap.xml", async (req, res) => {
+  try {
+    // 1. جلب كل المنتجات من الداتابيز (هنجيب فقط الـ _id والـ updatedAt لتسريع الاستعلام)
+    const products = await Product.find({}, "_id updatedAt").lean();
+
+    // 2. الصفحات الثابتة في موقعك
+    const staticPages = [
+      "",
+      "/about",
+      "/contact",
+      "/cart",
+    ];
+
+    const baseUrl = "https://www.rozalin-store.com";
+
+    // 3. بناء الـ XML الخاص بالـ Sitemap
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+    // إضافة الصفحات الثابتة
+    staticPages.forEach(page => {
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}${page}</loc>\n`;
+      xml += `    <changefreq>daily</changefreq>\n`;
+      xml += `    <priority>${page === '' ? '1.0' : '0.8'}</priority>\n`;
+      xml += `  </url>\n`;
+    });
+
+    // إضافة صفحات المنتجات الديناميكية بالمسار الصحيح (/details/ID)
+    products.forEach(product => {
+      const lastMod = product.updatedAt ? new Date(product.updatedAt).toISOString() : new Date().toISOString();
+
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}/details/${product._id}</loc>\n`; // التعديل هنا لتكون /details/ بدلاً من /product/
+      xml += `    <lastmod>${lastMod}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>0.7</priority>\n`;
+      xml += `  </url>\n`;
+    });
+
+    xml += `</urlset>`;
+
+    // 4. إرسال الملف كـ XML
+    res.header("Content-Type", "application/xml");
+    res.status(200).send(xml);
+
+  } catch (error) {
+    console.error("Sitemap generation error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
