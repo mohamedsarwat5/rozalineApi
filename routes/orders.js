@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
 
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
@@ -27,19 +28,17 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 3. إنشاء طلب جديد (Checkout) ✨ (تم التحديث)
+// 3. إنشاء طلب جديد (Checkout) ومعه إرسال الحدث لـ Meta Conversions API
 router.post("/", async (req, res) => {
   try {
     const { cartId, customerName, phone, address, governorate, shippingPrice } = req.body;
 
-    // 👈 التحقق من وجود بيانات المحافظة والشحن
     if (!governorate || shippingPrice === undefined) {
       return res.status(400).json({
         message: "Governorate and shipping price are required",
       });
     }
 
-    // البحث بحقل user لأن هذا هو مكان تخزين الـ ID في العربة
     const cart = await Cart.findOne({ user: cartId });
 
     if (!cart || cart.items.length === 0) {
@@ -48,7 +47,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // 👈 الحساب الآمن للإجمالي: جمع سعر السلة الأصلي + تكلفة شحن المحافظة المحددة
     const calculatedTotalPrice = cart.totalPrice + Number(shippingPrice);
 
     const order = await Order.create({
@@ -56,16 +54,56 @@ router.post("/", async (req, res) => {
       customerName,
       phone,
       address,
-      governorate, // 👈 حفظ المحافظة
-      shippingPrice, // 👈 حفظ سعر الشحن
+      governorate,
+      shippingPrice,
       items: cart.items,
-      totalPrice: calculatedTotalPrice, // 👈 الإجمالي الجديد شاملاً الشحن
+      totalPrice: calculatedTotalPrice,
     });
 
     // تصفير العربة بالكامل بعد نجاح الطلب
     cart.items = [];
     cart.totalPrice = 0;
     await cart.save();
+
+    // 🚀 إرسال حدث الشراء (Purchase) لـ Meta في الخلفية
+    try {
+      const pixelId = "1071213568930971"; // رقم البيكسل المباشر
+      const accessToken = process.env.META_ACCESS_TOKEN; // التوكن السري من Vercel
+
+      if (accessToken) {
+        const url = `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`;
+
+        const hashedPhone = phone ? crypto.createHash('sha256').update(phone.trim()).digest('hex') : undefined;
+
+        const payload = {
+          data: [
+            {
+              event_name: 'Purchase',
+              event_time: Math.floor(Date.now() / 1000),
+              action_source: 'website',
+              user_data: {
+                ph: hashedPhone ? [hashedPhone] : undefined,
+                client_ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+                client_user_agent: req.headers['user-agent']
+              },
+              custom_data: {
+                currency: 'EGP',
+                value: calculatedTotalPrice,
+                order_id: order._id.toString()
+              }
+            }
+          ]
+        };
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(err => console.error('Meta CAPI Error:', err));
+      }
+    } catch (capiError) {
+      console.error('CAPI execution error:', capiError);
+    }
 
     res.status(201).json(order);
   } catch (error) {
