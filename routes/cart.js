@@ -2,81 +2,97 @@ const express = require("express");
 const router = express.Router();
 
 const Cart = require("../models/Cart");
+const Product = require("../models/Product"); // 👈 استدعاء موديل المنتجات
 
-
-// get cart
+// 1. Get Cart
 router.get("/:cartId", async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.params.cartId })
-      .populate("items.product"); // 👈 جلب تفاصيل المنتج (الاسم، الصورة، إلخ) تلقائياً من الموديل الخاص به
-
-    res.status(200).json(cart);
+    const cart = await Cart.findOne({ user: req.params.cartId }).populate("items.product");
+    res.status(200).json(cart || { user: req.params.cartId, items: [], totalPrice: 0 });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-
-// add to cart
+// 2. Add to Cart
 router.post("/", async (req, res) => {
   try {
     const {
-      cartId, // سنفترض أنك تمرر الـ ID الخاص بالمستخدم أو معرّف فريد بصيغة ObjectId
+      cartId,
       productId,
       color,
       image,
-      price,
       quantity,
-      size,   // استقبل الحجم المرسل من الفرونت
-      length  // استقبل الطول المرسل من الفرونت
+      size,   // selectedWeight
+      length  // selectedLength
     } = req.body;
 
-    // 1. البحث عن الكارت الخاص بالمسخدم
-    // ملاحظة: الـ Schema تتوقع أن يكون حقل user عبارة عن ObjectId صالح في MongoDB
+    // جلب المنتج للتأكد من وجوده ولحساب السعر الحقيقي
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "المنتج غير موجود" });
+    }
+
+    // تحديد السعر المخصم أو الأساسي
+    const finalPrice = (product.onSale && product.salePrice) ? product.salePrice : product.price;
+
     let cart = await Cart.findOne({ user: cartId });
 
-    // 2. إذا لم يكن الكارت موجوداً، نقوم بإنشائه
     if (!cart) {
       cart = await Cart.create({
-        user: cartId, // ربط الكارت بالـ user كما تطلب الـ Schema
+        user: cartId,
         items: [],
       });
     }
 
-    // 3. ترتيب البيانات بالشكل الذي تتوقعه الـ cartItemSchema تماماً
-    cart.items.push({
-      product: productId,          // مطابق لـ product في الـ Schema
-      quantity: quantity || 1,     // مطابق لـ quantity
-      selectedColor: {             // كائن فرعي مطابق للـ Schema
-        color: color,
-        image: image
-      },
-      selectedWeight: size || null,     // مطابق لـ selectedWeight
-      selectedLength: length || null,   // مطابق لـ selectedLength
-      priceAtAddition: price            // مطابق لـ priceAtAddition
-    });
+    // التحقق مما إذا كان نفس المنتج بنفس الخصائص موجوداً مسبقاً
+    const existingItemIndex = cart.items.findIndex(
+      (item) =>
+        item.product.toString() === productId &&
+        item.selectedColor?.color === color &&
+        item.selectedWeight === (size || null) &&
+        item.selectedLength === (length || null)
+    );
 
-    // 4. الحفظ (وهنا سيعمل سطر الـ pre save تلقائياً لحساب السعر الإجمالي الكلي)
+    if (existingItemIndex > -1) {
+      // إذا كان موجوداً، يتم زيادة الكمية وتحديث السعر
+      cart.items[existingItemIndex].quantity += Number(quantity) || 1;
+      cart.items[existingItemIndex].priceAtAddition = finalPrice;
+    } else {
+      // إذا لم يكن موجوداً، يضاف كعنصر جديد
+      cart.items.push({
+        product: productId,
+        quantity: Number(quantity) || 1,
+        selectedColor: {
+          color: color,
+          image: image,
+        },
+        selectedWeight: size || null,
+        selectedLength: length || null,
+        priceAtAddition: finalPrice,
+      });
+    }
+
+    // حفظ الكارت (يعمل pre-save تلقائياً لحساب totalPrice)
     await cart.save();
 
     res.status(201).json(cart);
   } catch (error) {
-    console.error("Mongoose Save Error:", error.message); // لكي تراه في سجلات السيرفر
+    console.error("Mongoose Save Error:", error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-
-// update quantity
+// 3. Update Quantity
 router.put("/:cartId/:itemId", async (req, res) => {
   try {
-    const cart = await Cart.findOne({
-      user: req.params.cartId,
-    });
+    const cart = await Cart.findOne({ user: req.params.cartId });
+    if (!cart) return res.status(404).json({ message: "الكارت غير موجود" });
 
     const item = cart.items.id(req.params.itemId);
+    if (!item) return res.status(404).json({ message: "العنصر غير موجود" });
 
-    item.quantity = req.body.quantity;
+    item.quantity = Number(req.body.quantity);
 
     await cart.save();
 
@@ -86,12 +102,11 @@ router.put("/:cartId/:itemId", async (req, res) => {
   }
 });
 
-// delet item
+// 4. Delete Item
 router.delete("/:cartId/:itemId", async (req, res) => {
   try {
-    const cart = await Cart.findOne({
-      user: req.params.cartId,
-    });
+    const cart = await Cart.findOne({ user: req.params.cartId });
+    if (!cart) return res.status(404).json({ message: "الكارت غير موجود" });
 
     cart.items.pull(req.params.itemId);
 
@@ -103,21 +118,18 @@ router.delete("/:cartId/:itemId", async (req, res) => {
   }
 });
 
-
-// clear cart
+// 5. Clear Cart
 router.delete("/:cartId", async (req, res) => {
   try {
-    const cart = await Cart.findOne({
-      cartId: req.params.cartId,
-    });
+    // تم التعديل إلى user بدلاً من cartId ليتوافق مع الـ Schema
+    const cart = await Cart.findOne({ user: req.params.cartId });
+    if (!cart) return res.status(404).json({ message: "الكارت غير موجود" });
 
     cart.items = [];
 
     await cart.save();
 
-    res.status(200).json({
-      message: "Cart cleared",
-    });
+    res.status(200).json({ message: "Cart cleared" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
