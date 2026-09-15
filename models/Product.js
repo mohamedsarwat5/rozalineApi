@@ -34,7 +34,14 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
+    onSale: {
+      type: Boolean,
+      default: false,
+    },
+    SalePrice: {
+      type: Number,
+      required: false,
+    },
     newArrival: {
       type: Boolean,
       default: false,
