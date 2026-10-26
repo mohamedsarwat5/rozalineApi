@@ -76,13 +76,13 @@ const orderSchema = new mongoose.Schema(
     // حقل إضافي هام جداً لإدارة المتجر ومتابعة الشحن
     status: {
       type: String,
-      enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
+      enum: ["Pending", "Shipped", "Delivered", "Cancelled"],
       default: "Pending",
     },
   },
   {
     timestamps: true, // يسجل وقت عمل الطلب تلقائياً (createdAt)
-  }
+  },
 );
 
 module.exports = mongoose.model("Order", orderSchema);
