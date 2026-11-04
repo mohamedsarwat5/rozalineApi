@@ -117,10 +117,10 @@ router.patch("/:id/status", async (req, res) => {
     const { status } = req.body;
 
     const allowedStatuses = [
-      "none",
-      "preparing",
-      "shipping",
-      "delivered",
+      "Pending",
+      "Shipped",
+      "Delivered",
+      "Cancelled",
     ];
 
     if (!allowedStatuses.includes(status)) {
