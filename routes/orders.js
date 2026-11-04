@@ -111,6 +111,42 @@ router.post("/", async (req, res) => {
   }
 });
 
+// تعديل حالة الطلب
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "none",
+      "preparing",
+      "shipping",
+      "delivered",
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status",
+      });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // 4. حذف طلب
 router.delete("/:id", async (req, res) => {
   try {
