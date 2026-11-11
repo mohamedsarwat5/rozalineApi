@@ -76,7 +76,7 @@ const orderSchema = new mongoose.Schema(
     // حقل إضافي هام جداً لإدارة المتجر ومتابعة الشحن
     status: {
       type: String,
-      enum: ["Pending", "Shipped", "Delivered", "Cancelled"],
+      enum: ["Pending", "Confirmed", "Delivered", "Cancelled"],
       default: "Pending",
     },
   },
